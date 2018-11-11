@@ -4,6 +4,8 @@ import shutil
 import errno
 import html
 import logging
+import json
+import itertools
 from os import listdir
 from os.path import join, split, splitext
 
@@ -16,6 +18,8 @@ from pygments.lexers import get_lexer_by_name
 from pygments.util import ClassNotFound
 from xml.sax.saxutils import escape
 
+logging.basicConfig(format='[%(asctime)s] p%(process)s %(pathname)s:%(lineno)d %(levelname)s - %(message)s',
+        level=logging.DEBUG)
 
 def copy(src, dst):
     try:
@@ -58,8 +62,11 @@ def parse_page(content):
 
     meta = yaml.load("\n".join(lines[1:split_pos]))
     html = "\n".join(lines[split_pos + 1:])
-    return dict(meta=meta, html=html, title=meta.get('title', ''),
-                description=meta.get('description', ''), header_img=meta.get('header_img', ''))
+    return dict(meta=meta, html=html,
+            title=meta.get('title', ''),
+            order=meta.get('order', 0),
+            description=meta.get('description', ''),
+            header_img=meta.get('header_img', ''))
 
 
 class HighlighterRenderer(m.HtmlRenderer):
@@ -215,11 +222,12 @@ def build():
 
     tags_keys = list(tags.keys())
     tags_keys.sort()
-    site['tags'] = map(lambda t: [t, tags[t]], tags_keys)
+    site['tags'] = [tag for tag in map(lambda t: [t, tags[t]], tags_keys)]
 
     archives_keys = list(archives.keys())
     archives_keys.sort(reverse=True)
-    site['archives'] = map(lambda a: [a, archives[a]], archives_keys)
+    site['archives'] = [archive for archive in map(lambda a: [a, archives[a]],
+        archives_keys)]
 
     paginators = paginate(posts, limit=site['paginate'])
 
@@ -249,7 +257,7 @@ def build():
             page['url'] = '/%s' % name
             pages.append(page)
 
-    site['pages'] = pages
+    site['pages'] = sorted(pages, key=lambda p: p.get('order', 0))
 
     # create html for posts
     for post in posts:
@@ -273,7 +281,7 @@ def build():
             with open("_site/%s/index.html" % page['file']['name'], "w") as htmlfile:
                 htmlfile.write(html)
 
-    logging.info("%s posts and %s pages are processed.\nEnjoy!" % (len(posts), len(pages)))
+    logging.info("%s posts and %s pages are processed.", len(posts), len(pages))
 
 if __name__ == '__main__':
     build()
