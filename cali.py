@@ -101,7 +101,8 @@ def parse_post(postfile_path, mdrender):
 
         # 处理文件名
         meta['file'] = dict(archive=name[:len('yyyy-MM-dd')], name=name[len('yyyy-MM-dd') + 1:], ext=ext)
-        return dict(meta=meta, markdown=content, html=mdrender(content))
+        return dict(meta=meta, markdown=content, html=mdrender(content),
+                catalog=meta.get('catalog', False))
 
 
 ## filters for jinja2
@@ -198,6 +199,8 @@ def build():
             tags=doc['meta']['tags'],
             author=doc['meta']['author'],
             url='/%s/%s' % (doc['meta']['file']['archive'].replace('-', '/'), doc['meta']['file']['name']),
+            catalog=doc['catalog'],
+            multilangual=doc['meta'].get('multilangual', 0),
             meta=doc['meta'],
             content=doc['html']
         )
