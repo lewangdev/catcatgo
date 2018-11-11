@@ -1,0 +1,4 @@
+pyyaml>=3.13
+misaka>=2.1.0
+jinja2>=2.10
+Pygments>=2.1.3
