@@ -1,15 +1,14 @@
-# coding=utf8
-from __future__ import print_function
-
-import yaml
 import os
 import re
 import shutil
 import errno
-import cgi
-import misaka as m
+import html
+import logging
 from os import listdir
 from os.path import join, split, splitext
+
+import yaml
+import misaka as m
 from jinja2 import Environment, FileSystemLoader
 from pygments import highlight
 from pygments.formatters.html import HtmlFormatter
@@ -74,7 +73,7 @@ class HighlighterRenderer(m.HtmlRenderer):
             formatter = HtmlFormatter()
             return highlight(text, lexer, formatter)
 
-        text_escaped = '\n<pre>\n<code>\n%s\n</code>\n</pre>\n' % cgi.escape(text)
+        text_escaped = '\n<pre>\n<code>\n%s\n</code>\n</pre>\n' % html.escape(text)
         return text_escaped
 
 
@@ -95,7 +94,7 @@ def parse_post(postfile_path, mdrender):
 
         # 处理文件名
         meta['file'] = dict(archive=name[:len('yyyy-MM-dd')], name=name[len('yyyy-MM-dd') + 1:], ext=ext)
-        return dict(meta=meta, markdown=content, html=mdrender(content.decode('utf-8')))
+        return dict(meta=meta, markdown=content, html=mdrender(content))
 
 
 ## filters for jinja2
@@ -130,7 +129,7 @@ class RubyLikeList(list):
 
 def paginate(posts, limit=10):
     total_count = len(posts)
-    total_pages = (total_count - 1) / limit + 1
+    total_pages = int((total_count - 1) / limit + 1)
     paginators = []
     for i in range(total_pages):
         paginator = dict(total_pages=total_pages, posts=posts[i*limit:(i+1)*limit])
@@ -214,11 +213,11 @@ def build():
         if i < len(posts) - 1:
             posts[i]['next'] = dict(url=posts[i + 1]['url'], title=posts[i + 1]['title'])
 
-    tags_keys = tags.keys()
+    tags_keys = list(tags.keys())
     tags_keys.sort()
     site['tags'] = map(lambda t: [t, tags[t]], tags_keys)
 
-    archives_keys = archives.keys()
+    archives_keys = list(archives.keys())
     archives_keys.sort(reverse=True)
     site['archives'] = map(lambda a: [a, archives[a]], archives_keys)
 
@@ -259,7 +258,7 @@ def build():
         path = '_site%s' % post['url']
         mkdir(path)
         with open("%s/index.html" % path, "w") as htmlfile:
-            htmlfile.write(html.encode('utf8'))
+            htmlfile.write(html)
 
     # create html for pages
     for page in pages:
@@ -268,13 +267,13 @@ def build():
 
         if page['file']['name'] in set(['index', '404']):
             with open("_site/%s.html" % page['file']['name'], "w") as htmlfile:
-                htmlfile.write(html.encode('utf8'))
+                htmlfile.write(html)
         else:
             mkdir('_site/%s' % page['file']['name'])
             with open("_site/%s/index.html" % page['file']['name'], "w") as htmlfile:
-                htmlfile.write(html.encode('utf8'))
+                htmlfile.write(html)
 
-    print("%s posts and %s pages are processed.\nEnjoy!" % (len(posts), len(pages)))
+    logging.info("%s posts and %s pages are processed.\nEnjoy!" % (len(posts), len(pages)))
 
 if __name__ == '__main__':
     build()
