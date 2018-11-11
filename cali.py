@@ -99,7 +99,6 @@ def parse_post(postfile_path, mdrender):
         meta = yaml.load("\n".join(lines[1:split_pos]))
         content = "\n".join(lines[split_pos + 1:])
 
-        # 处理文件名
         meta['file'] = dict(archive=name[:len('yyyy-MM-dd')], name=name[len('yyyy-MM-dd') + 1:], ext=ext)
         return dict(meta=meta, markdown=content, html=mdrender(content),
                 catalog=meta.get('catalog', False))
