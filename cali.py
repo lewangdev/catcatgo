@@ -4,8 +4,6 @@ import shutil
 import errno
 import html
 import logging
-import json
-import itertools
 from os import listdir
 from os.path import join, split, splitext
 
