@@ -13,7 +13,7 @@ Cali is a fast & simple blog tool powered by Python 3.
 ## Installation
 
 ``` bash
-$pip install -r requirements.txt
+$ pip install -r requirements.txt
 ```
 
 ## Quick Start
@@ -35,7 +35,7 @@ $ python -m http.server
 **Create a new post**
 
 ``` bash
-wget https://gist.githubusercontent.com/thisiswangle/8bfd5f6fa91e6128e693345216555435/raw/84b54fc1cd23463e7445ea137012bd208f4636a4/new.py%25E3%2580%2580 -O new.py
+$ wget https://gist.githubusercontent.com/thisiswangle/8bfd5f6fa91e6128e693345216555435/raw/84b54fc1cd23463e7445ea137012bd208f4636a4/new.py%25E3%2580%2580 -O new.py
 python new.py
 ```
 
