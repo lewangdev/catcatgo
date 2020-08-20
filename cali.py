@@ -41,7 +41,7 @@ def mkdir(path):
 
 def load_conf(conffile_path='_config.yml'):
     with open(conffile_path, 'r') as conffile:
-        return yaml.load(conffile.read())
+        return yaml.load(conffile.read(), Loader=yaml.FullLoader)
 
 
 def read(fpath):
@@ -58,7 +58,7 @@ def parse_page(content):
             break
         split_pos += 1
 
-    meta = yaml.load("\n".join(lines[1:split_pos]))
+    meta = yaml.load("\n".join(lines[1:split_pos]), Loader=yaml.FullLoader)
     html = "\n".join(lines[split_pos + 1:])
     return dict(meta=meta, html=html,
             title=meta.get('title', ''),
@@ -94,7 +94,7 @@ def parse_post(postfile_path, mdrender):
                 break
             split_pos += 1
 
-        meta = yaml.load("\n".join(lines[1:split_pos]))
+        meta = yaml.load("\n".join(lines[1:split_pos]), Loader=yaml.FullLoader)
         content = "\n".join(lines[split_pos + 1:])
 
         meta['file'] = dict(archive=name[:len('yyyy-MM-dd')], name=name[len('yyyy-MM-dd') + 1:], ext=ext)
@@ -154,21 +154,25 @@ def paginate(posts, limit=10):
 def build():
     # load site config
     site = load_conf()
+    theme_path = 'themes/%s' % site.get('theme', 'default')
+    data_path = site.get('data_dir', '_data')
+    output_path = site.get('output_path', 'dist')
 
     # create markdown doc render object
     mdrender = m.Markdown(HighlighterRenderer(), extensions=('fenced-code', 'tables', 'autolink', 'no-intra-emphasis'))
 
-    # copy static files to _site
+    # copy static files to output_path
     assets = ['css', 'fonts', 'img', 'js', 'CNAME', 'README.md']
     for asset in assets:
-        copy(asset, '_site/%s' % asset)
+        copy('%s/%s' % (theme_path, asset), '%s/%s' % (output_path, asset))
 
-    posts_path = '_posts'
+    posts_path = '%s/_posts' % data_path
     docs = [parse_post(join(posts_path, f), mdrender) for f in listdir(posts_path) if
             f.endswith('.markdown') or f.endswith('.md')]
 
     # init jinja2
-    env = Environment(loader=FileSystemLoader('.'))
+    template_path = os.path.join(os.path.dirname(__file__), theme_path)
+    env = Environment(loader=FileSystemLoader(template_path))
     env.trim_blocks = True
     env.lstrip_blocks = True
     env.filters['date'] = date_format
@@ -232,7 +236,7 @@ def build():
     paginators = paginate(posts, limit=site['paginate'])
 
     pages = []
-    pages_path = '.'
+    pages_path = theme_path
     pagefile_paths = [join(pages_path, f) for f in listdir(pages_path) if
                       f.endswith('.html') or f.endswith('.htm')]
     for pagefile_path in pagefile_paths:
@@ -242,7 +246,7 @@ def build():
 
         if name in set(['index']):
             for i in range(len(paginators)):
-                content = env.get_template(pagefile_path) \
+                content = env.get_template(pagefile_path[len(theme_path):]) \
                     .render(dict(site=site, page=page['meta'], paginator=paginators[i]))
                 page = parse_page(content)
                 name = 'index' if i == 0 else 'page%s' % i
@@ -250,7 +254,7 @@ def build():
                 page['url'] = '/%s' % name
                 pages.append(page)
         else:
-            content = env.get_template(pagefile_path) \
+            content = env.get_template(pagefile_path[len(theme_path):]) \
                 .render(dict(site=site, page=page['meta'], paginator={}))
             page = parse_page(content)
             page['file'] = dict(name=name, ext=ext)
@@ -261,24 +265,24 @@ def build():
 
     # create html for posts
     for post in posts:
-        html = env.get_template('_layouts/%s.html' % post['meta']['layout']) \
+        html = env.get_template('_layouts/%s.html' % (post['meta']['layout'])) \
             .render(dict(site=site, page=post, content=post['content']))
-        path = '_site%s' % post['url']
+        path = '%s%s' % (output_path, post['url'])
         mkdir(path)
         with open("%s/index.html" % path, "w") as htmlfile:
             htmlfile.write(html)
 
     # create html for pages
     for page in pages:
-        html = env.get_template('_layouts/%s.html' % page['meta']['layout']) \
+        html = env.get_template('_layouts/%s.html' % (page['meta']['layout'])) \
             .render(dict(site=site, page=page, content=page['html']))
 
         if page['file']['name'] in set(['index', '404']):
-            with open("_site/%s.html" % page['file']['name'], "w") as htmlfile:
+            with open("%s/%s.html" % (output_path, page['file']['name']), "w") as htmlfile:
                 htmlfile.write(html)
         else:
-            mkdir('_site/%s' % page['file']['name'])
-            with open("_site/%s/index.html" % page['file']['name'], "w") as htmlfile:
+            mkdir('%s/%s' % (output_path, page['file']['name']))
+            with open("%s/%s/index.html" % (output_path, page['file']['name']), "w") as htmlfile:
                 htmlfile.write(html)
 
     logging.info("%s posts and %s pages are processed.", len(posts), len(pages))
