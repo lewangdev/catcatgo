@@ -20,6 +20,8 @@ CALI_CONTENT_PATTERN = re.compile(r'---([\s\S]*?)---')
 
 
 def copy(src, dst):
+    if not os.path.exists(src):
+        return
     try:
         if os.path.exists(dst):
             shutil.rmtree(dst)
@@ -268,6 +270,7 @@ def build():
             pages.append(page)
 
     site['pages'] = sorted(pages, key=lambda p: p.get('order', 0))
+    site['posts'] = posts
 
     for post in posts:
         html = env.get_template('_layouts/%s.html' % (post['meta']['layout'])) \
