@@ -1,6 +1,6 @@
-# Cali
+# Catcatgo
 
-Cali is a fast & simple static site generator powered by Python 3.
+Catcatgo is a fast & simple static site generator powered by Python 3.
 
 ## Features
 
@@ -19,7 +19,7 @@ $ pip install -r requirements.txt
 **Generate static files**
 
 ``` bash
-$ python cali.py
+$ python catcatgo.py
 ```
 
 ## Live Demo
